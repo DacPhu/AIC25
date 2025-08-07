@@ -1,4 +1,3 @@
-import { getAvailableModels } from "../services/search.js";
 export const nlist = 128;
 export const nprobeOption = [128, 32, 8];
 export const limitOptions = [10, 15, 20, 50];

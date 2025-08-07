@@ -28,8 +28,7 @@ export async function search(
       selected: selected,
     },
   });
-  const data = res.data;
-  return data;
+  return res.data;
 }
 export async function searchSimilar(
   id,
@@ -55,8 +54,7 @@ export async function searchSimilar(
       max_interval: max_interval,
     },
   });
-  const data = res.data;
-  return data;
+  return res.data;
 }
 
 export async function getFrameInfo(videoId, frameId) {
@@ -66,11 +64,10 @@ export async function getFrameInfo(videoId, frameId) {
       frame_id: frameId,
     },
   });
-  const data = res.data;
-  return data;
+  return res.data;
 }
+
 export async function getAvailableModels() {
   const res = await axios.get(`http://127.0.0.1:${PORT}/api/models`);
-  const data = res.data;
-  return data;
+  return res.data;
 }

@@ -7,7 +7,7 @@ export default function VideoProvider({ children }) {
   const playVideo = (f) => {
     setFrameInfo(f);
   };
-  const handleOnCancle = () => {
+  const handleOnCancel = () => {
     setFrameInfo(null);
   };
   return (
@@ -17,7 +17,7 @@ export default function VideoProvider({ children }) {
       }}
     >
       {frameInfo !== null && (
-        <VideoPlayer frameInfo={frameInfo} onCancle={handleOnCancle} />
+        <VideoPlayer frameInfo={frameInfo} onCancle={handleOnCancel} />
       )}
       {children}
     </VideoContext.Provider>

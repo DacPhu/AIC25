@@ -1,5 +1,11 @@
 import { searchSimilar } from "../services/search.js";
-import { nlist, limitOptions, nprobeOption } from "../resources/options.js";
+import {
+    limitOptions,
+    max_interval_default,
+    nprobeOption,
+    ocr_threshold_default,
+    ocr_weight_default, temporal_k_default
+} from "../resources/options.js";
 
 export async function loader({ request }) {
   const url = new URL(request.url);

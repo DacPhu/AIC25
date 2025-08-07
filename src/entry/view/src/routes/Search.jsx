@@ -6,7 +6,7 @@ import {
   useNavigation,
 } from "react-router-dom";
 import classNames from "classnames";
-import { useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 
 import { search } from "../services/search.js";
 import { FrameItem, FrameContainer } from "../components/Frame.jsx";
@@ -18,7 +18,6 @@ import HomeButton from "../assets/home-btn.svg";
 import SpinIcon from "../assets/spin.svg";
 
 import {
-  nlist,
   limitOptions,
   nprobeOption,
   temporal_k_default,
@@ -92,7 +91,7 @@ export default function Search() {
   for (const [k, v] of Object.entries(params)) {
     useEffect(() => {
       document.querySelector(`#${k}`).value = v;
-    }, [v]);
+    }, [k, v]);
   }
 
   // Add hotkeys
@@ -100,13 +99,15 @@ export default function Search() {
     const handleKeyDown = (e) => {
       switch (e.keyCode) {
         case 191:
-          const filterBar = document.querySelector("#search-area");
-          filterBar.scrollIntoView();
-          const searchBar = document.querySelector("#search-bar");
-          if (searchBar !== document.activeElement) {
-            e.preventDefault();
-            searchBar.focus();
-            return false;
+          {
+              const filterBar = document.querySelector("#search-area");
+              filterBar.scrollIntoView();
+              const searchBar = document.querySelector("#search-bar");
+              if (searchBar !== document.activeElement) {
+                e.preventDefault();
+                searchBar.focus();
+                return false;
+              }
           }
       }
     };
@@ -115,6 +116,7 @@ export default function Search() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
   useEffect(() => {
     document.title = q + `(${Math.floor(offset / limit) + 1})`;
     const handleKeyDown = (e) => {
@@ -133,7 +135,7 @@ export default function Search() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [offset]);
+  }, [goToNextPage, goToPreviousPage, limit, offset, q]);
 
   const goToFirstPage = () => {
     submit({
@@ -142,14 +144,15 @@ export default function Search() {
       offset: 0,
     });
   };
-  const goToPreviousPage = () => {
+  const goToPreviousPage = useCallback(() => {
     submit({
       ...query,
       ...params,
       offset: Math.max(parseInt(offset) - parseInt(limit), 0),
     });
-  };
-  const goToNextPage = () => {
+  });
+
+  const goToNextPage = useCallback(() => {
     if (!empty) {
       submit({
         ...query,
@@ -157,11 +160,12 @@ export default function Search() {
         offset: parseInt(offset) + parseInt(limit),
       });
     }
-  };
+  });
 
   const handleOnPlay = (frame) => {
     playVideo(frame);
   };
+
   const handleOnSearchSimilar = (frame) => {
     submit({ id: frame.id, ...params }, { action: "/similar" });
   };

@@ -15,8 +15,7 @@ export async function getAnswersByIds(ids) {
   if (!answers) {
     return [];
   }
-  const res = answers.filter((answer) => ids.includes(answer.id));
-  return res;
+  return answers.filter((answer) => ids.includes(answer.id));
 }
 
 export async function addAnswer(answer) {
