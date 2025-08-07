@@ -2,7 +2,7 @@ from transformers import CLIPModel, CLIPProcessor
 from torch.utils.data import DataLoader
 import torch
 
-from ....config import GlobalConfig
+from config import GlobalConfig
 from .feature_extractor import FeatureExtractor, ImageDataset
 
 

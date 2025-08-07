@@ -1,4 +1,3 @@
-from pathlib import Path
 import subprocess
 import os
 import json
@@ -8,8 +7,8 @@ import numpy as np
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from .command import BaseCommand
-from ...packages.index import MilvusDatabase
-from ...config import GlobalConfig
+from packages import MilvusDatabase
+from config import GlobalConfig
 
 
 class IndexCommand(BaseCommand):

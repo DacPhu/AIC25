@@ -7,8 +7,8 @@ import hashlib
 from thefuzz import fuzz
 
 from ..index import MilvusDatabase
-from ...config import GlobalConfig
-from ...packages.analyse.features import CLIP
+from config import GlobalConfig
+from services.analyse import CLIP
 
 
 class Searcher(object):

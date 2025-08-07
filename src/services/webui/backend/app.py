@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from ...search import Searcher
 from ...analyse.features import CLIP
-from ....config import GlobalConfig
+from config import GlobalConfig
 
 WORK_DIR = Path(os.getenv("AIC51_WORK_DIR") or ".")
 logger = logging.getLogger(__name__)

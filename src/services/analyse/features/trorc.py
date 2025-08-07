@@ -2,9 +2,9 @@ from math import ceil
 import easyocr
 import torch
 
-from ....config import GlobalConfig
+from config import GlobalConfig
 from .feature_extractor import FeatureExtractor, ImageDataset
-from ....config import GlobalConfig
+from config import GlobalConfig
 
 
 class TrOCR(FeatureExtractor):

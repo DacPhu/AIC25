@@ -17,7 +17,7 @@ from rich.progress import (
 import cv2
 
 from .command import BaseCommand
-from ...config import GlobalConfig
+from config import GlobalConfig
 
 
 class AddCommand(BaseCommand):

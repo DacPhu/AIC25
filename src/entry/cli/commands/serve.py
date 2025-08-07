@@ -7,8 +7,8 @@ from pathlib import Path
 import uvicorn
 
 from .command import BaseCommand
-from ...config import GlobalConfig
-from ...packages.index import MilvusDatabase
+from config import GlobalConfig
+from packages import MilvusDatabase
 
 
 class ServeCommand(BaseCommand):
@@ -52,7 +52,7 @@ class ServeCommand(BaseCommand):
             )
             sys.exit(1)
 
-        os.environ["AIC51_WORK_DIR"] = str(self._work_dir)
+        os.environ["AIC25_WORK_DIR"] = str(self._work_dir)
         dev_params = dict(
             reload=True,
             reload_dirs=[str(Path(__file__).parent / "../../packages")],
@@ -68,7 +68,7 @@ class ServeCommand(BaseCommand):
                 dev_cmd,
                 env=dev_env,
                 cwd=str(
-                    Path(__file__).parent / "../../packages/webui/frontend"
+                    Path(__file__).parent / "../../entry/view"
                 ),
             )
         else:
@@ -91,7 +91,7 @@ class ServeCommand(BaseCommand):
         install_cmd = ["npm", "install"]
         subprocess.run(
             install_cmd,
-            cwd=str(Path(__file__).parent / "../../packages/webui/frontend"),
+            cwd=str(Path(__file__).parent / "../../entry/view"),
         )
 
     def _build_frontend(self, port):
@@ -102,11 +102,11 @@ class ServeCommand(BaseCommand):
         subprocess.run(
             build_cmd,
             env=build_env,
-            cwd=str(Path(__file__).parent / "../../packages/webui/frontend"),
+            cwd=str(Path(__file__).parent / "../../entry/view"),
         )
-        built_dir = Path(__file__).parent / "../../packages/webui/frontend/dist"
+        built_dir = Path(__file__).parent / "../../entry/view/dist"
         public_dir = (
-            Path(__file__).parent / "../../packages/webui/frontend/public"
+            Path(__file__).parent / "../../entry/view/public"
         )
 
         web_dir = self._work_dir / ".web"
