@@ -1,7 +1,5 @@
 import os
 import json
-from pathlib import Path
-import shutil
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -9,8 +7,8 @@ import torch
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn
 
 from .command import BaseCommand
-from ...packages.analyse.features import CLIP, TrOCR
-from ...config import GlobalConfig
+from services.analyse.features import CLIP, TrOCR
+from config import GlobalConfig
 
 
 class AnalyseCommand(BaseCommand):

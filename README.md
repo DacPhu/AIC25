@@ -1,19 +1,19 @@
-# HCMC AI Challenge 2024
+# HCMC AI Challenge 2025
 
-## Team 51 - HCMUS
+## Team Past Beggar - HCMUS
 
 - Tran Nam Khanh
 - Phan Le Dac Phu
 - Duong Minh Loi
 - Nguyen Ngoc Thien An
-- Huynh Minh Duc
+- Nguyen Truong Thinh
 
 ## Installation
 
-- Run the following command to install `aic51-cli` CLI:
+- Run the following command to install `aic25-cli` CLI:
 
 ```bash
-pip install git+https://github.com/trnKhanh/AIC24.git
+pip install git+https://github.com/DacPhu/AIC25.git
 ```
 
 ## Plan

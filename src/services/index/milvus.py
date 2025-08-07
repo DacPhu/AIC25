@@ -6,7 +6,7 @@ from pathlib import Path
 from thefuzz import fuzz
 
 from pymilvus import DataType, MilvusClient
-from ...config import GlobalConfig
+from config import GlobalConfig
 
 
 class MilvusDatabase(object):
