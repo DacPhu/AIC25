@@ -3,17 +3,15 @@ import json
 import logging
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request, Header, Response
+from fastapi import FastAPI, Request, Header, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from ...search import Searcher
-from ...analyse.features import CLIP
+from services.search import Searcher
 from config import GlobalConfig
 
-WORK_DIR = Path(os.getenv("AIC51_WORK_DIR") or ".")
+WORK_DIR = Path(os.getenv("AIC25_WORK_DIR") or ".")
 logger = logging.getLogger(__name__)
 
 searcher = Searcher(GlobalConfig.get("webui", "database") or "milvus")

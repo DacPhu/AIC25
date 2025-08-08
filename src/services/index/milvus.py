@@ -1,9 +1,6 @@
 import logging
-import re
-import hashlib
 import subprocess
 from pathlib import Path
-from thefuzz import fuzz
 
 from pymilvus import DataType, MilvusClient
 from config import GlobalConfig

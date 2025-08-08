@@ -1,5 +1,4 @@
 import logging
-import sys
 from pathlib import Path
 
 from yaml import safe_load
@@ -23,7 +22,7 @@ class GlobalConfig:
 
         if not config_path.exists():
             logger.warning(
-                f'"{cls.CONFIG_FILE}" not found. Are you in AIC51 directory?'
+                f'"{cls.CONFIG_FILE}" not found. Are you in AIC25 directory?'
             )
             cls.__config = None
 

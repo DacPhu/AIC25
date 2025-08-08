@@ -10,7 +10,7 @@ class InitCommand(BaseCommand):
 
     def add_args(self, subparser):
         parser = subparser.add_parser(
-            "init", help="Initialize AIC51 working directory"
+            "init", help="Initialize AIC25 working directory"
         )
 
         parser.set_defaults(func=self)

@@ -4,10 +4,10 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.progress import Progress, TextColumn, TimeElapsedColumn
 
 from .command import BaseCommand
-from packages import MilvusDatabase
+from services.index import MilvusDatabase
 from config import GlobalConfig
 
 

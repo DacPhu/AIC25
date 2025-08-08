@@ -8,7 +8,7 @@ from thefuzz import fuzz
 
 from ..index import MilvusDatabase
 from config import GlobalConfig
-from services.analyse import CLIP
+from services.analyse.features import CLIP
 
 
 class Searcher(object):
