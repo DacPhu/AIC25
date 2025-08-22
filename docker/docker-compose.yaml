@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: aic25-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - aic25_workspace:/var/lib/aic25/workspace
+      - aic25_cache:/var/cache/aic25
+      - aic25_logs:/var/log/aic25
+    environment:
+      - AIC25_WORK_DIR=/var/lib/aic25/workspace
+      - AIC25_CONFIG_ENV=production
+      - AIC25_HOST=0.0.0.0
+      - AIC25_PORT=8000
+    networks:
+      - aic25_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/system/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: aic25-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - aic25_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Optional: Milvus database for large-scale deployment
+  milvus:
+    image: milvusdb/milvus:v2.3.0
+    container_name: aic25-milvus
+    restart: unless-stopped
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+    environment:
+      - ETCD_ENDPOINTS=etcd:2379
+      - MINIO_ADDRESS=minio:9000
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - aic25_network
+    profiles:
+      - milvus
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.0
+    container_name: aic25-etcd
+    restart: unless-stopped
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - aic25_network
+    profiles:
+      - milvus
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: aic25-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: minio server /data --console-address ":9001"
+    networks:
+      - aic25_network
+    profiles:
+      - milvus
+
+volumes:
+  aic25_workspace:
+    driver: local
+  aic25_cache:
+    driver: local
+  aic25_logs:
+    driver: local
+  milvus_data:
+    driver: local
+  etcd_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  aic25_network:
+    driver: bridge

@@ -1,0 +1,51 @@
+# AIC25 Production Configuration
+# Optimized settings for production deployment
+
+webui:
+  host: "0.0.0.0"
+  port: 8000
+
+# Production logging (less verbose)
+logging:
+  level: "WARNING"
+  file: "/var/log/aic25/app.log"
+  
+# Optimized batch sizes for production
+webui:
+  features:
+    - name: "clip"
+      batch_size: 32  # Larger batch for production
+    - name: "sentence_transformer"
+      batch_size: 64  # Larger batch for production
+
+# Production hardware optimization
+hardware:
+  gpu:
+    enabled: true
+    mixed_precision: true  # Enable for performance
+  cpu:
+    num_threads: -1  # Use all available cores
+
+# Production search optimization
+webui:
+  search:
+    default_nprobe: 32  # Higher for better accuracy
+    max_results: 50000  # Higher limit for production
+    
+    rerank:
+      enabled: true  # Enable re-ranking in production
+      top_k: 500
+
+# Production distributed settings
+distributed:
+  service_discovery:
+    enabled: true
+    health_check_interval: 60  # Less frequent checks
+    
+  load_balancing:
+    strategy: "health_weighted"
+
+# Production storage paths
+storage:
+  workspace_dir: "/var/lib/aic25/workspace"
+  cache_dir: "/var/cache/aic25"

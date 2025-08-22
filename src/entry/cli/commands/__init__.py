@@ -1,10 +1,10 @@
-import os
 import inspect
+import os
 from importlib import import_module
 from pkgutil import iter_modules
+
 from .command import BaseCommand
 
-# Find all subclasses of BaseCommand and export them as available_commands
 available_commands = set()
 package_dir = os.path.dirname(__file__)
 for _, module_name, _ in iter_modules([package_dir]):

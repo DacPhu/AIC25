@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "setuptools-scm"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,11 +9,11 @@ requires-python = ">= 3.12"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = { file = "LICENSE" }
 dependencies = [
-    "rich~=13.9.4",
+    "rich~=14.1.0",
     "torch==2.8.0",
     "torchvision==0.23.0",
     "numpy==2.2.6",
-    "transformers==4.55.0",
+    "transformers==4.55.2",
     "python-dotenv==1.1.1",
     "pyyaml==6.0.2",
     "opencv-python==4.12.0.88",
@@ -21,18 +21,32 @@ dependencies = [
     "pymilvus==2.6.0",
     "fastapi~=0.116.1",
     "uvicorn~=0.35.0",
+    "python-multipart~=0.0.20",
+    "requests~=2.32.0",
     "easyocr~=1.7.2",
     "thefuzz~=0.22.1",
-    "pymilvus~=2.6.0",
+    "faiss-cpu~=1.12.0",
+#    "faiss-gpu>=1.13.0",
+    "sentence-transformers~=5.1.0",
+    "aiofiles~=24.1.0",
+    "psutil~=6.1.0",
+    "paddlepaddle>=3.1.0",
+    "paddleocr>=3.2.0",
+    "protobuf==5.27.2",
+    "aiohttp~=3.12.15",
+    
+    # Audio processing dependencies
+    "librosa~=0.11.0",
+    "soundfile~=0.13.1",
 
     # Linting
-    "isort~=6.0.1"
+    "isort~=6.0.1",
+    "black~=25.1.0"
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project.scripts]
-aic25-cli = "aic25.cli:__main__.main"
-
-[tool.setuptools]
-packages = ["src"]
-
-
+aic25-cli = "entry.cli:__main__.main"
+aic25-demo = "scripts.demo_distributed:main"

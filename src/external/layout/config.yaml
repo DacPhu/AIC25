@@ -1,20 +1,175 @@
-max_workers_ratio: 1.0
+# Multimedia Retrieval System Configuration
+# Updated for FAISS backend with performance optimizations
+
+# Global settings
+max_workers_ratio: 0.8  # Reduced from 1.0 for better stability
+
+# Add command configuration
 add:
   max_scene_length: 50
+  keyframe_extraction:
+    method: "adaptive"  # "fixed", "adaptive", "scene_based"
+    adaptive_threshold: 0.3  # Similarity threshold for adaptive extraction
+    max_frames_per_second: 2
+    min_frames_per_video: 10
+    max_frames_per_video: 1000
+
+# Analysis configuration with enhanced features
 analyse:
   features: &analyse_features
     - name: "clip"
       pretrained_model: "openai/clip-vit-base-patch16"
       batch_size: 16
+      use_ensemble: false
+      # Alternative: Use a larger model for better accuracy
+      # pretrained_model: "openai/clip-vit-large-patch14"
+      # batch_size: 8  # Reduce batch size for a larger model
+      
+      # Advanced options (uncomment to enable)
+      # use_ensemble: true
+      # pretrained_models:
+      #   - "openai/clip-vit-base-patch16"
+      #   - "openai/clip-vit-base-patch32"
+      
     - name: "ocr"
       batch_size: 8
-  num_workers: 1
+      confidence_threshold: 0.7
+      languages: ["vi", "en"]  # Vietnamese and English
+      
+  # Performance optimization
+  num_workers: 2  # Increased from 1 for better performance
   pin_memory: true
+  mixed_precision: true  # Enable FP16 for faster inference
+  
+  # Advanced keyframe extraction settings
+  keyframe_extraction:
+    method: "adaptive"
+    adaptive_threshold: 0.3
+    max_frames_per_second: 2
+    min_frames_per_video: 10
+    max_frames_per_video: 1000
 
-milvus:
+# FAISS Configuration (replaces Milvus)
+faiss:
+  # Index type selection based on dataset size:
+  # - "Flat": Exact search, best for < 10k vectors
+  # - "IVF": Good balance, best for 10k-1M vectors  
+  # - "HNSW": Fastest approximate search, best for > 100k vectors
+  # - "PQ": Most memory efficient, for very large datasets
+  index_type: "IVF"  # Good default for medium datasets
+  
+  # IVF parameters (used when index_type is "IVF")
+  nlist: 128  # Number of clusters (your original setting)
+  nprobe: 8   # Number of clusters to search (higher = better recall)
+  
+  # HNSW parameters (used when index_type is "HNSW")
+  M: 32  # Number of bidirectional links
+  efConstruction: 400  # Index construction parameter
+  efSearch: 200  # Search parameter (higher = better recall)
+  
+  # PQ parameters (used when index_type is "PQ")
+  m: 8   # Number of subquantizers
+  nbits: 8  # Bits per subquantizer
+  
+  # Field definitions (adapted from your Milvus config)
   fields:
     - field_name: "frame_id"
       datatype: "VARCHAR"
+      max_length: 32
+      is_primary: true
+    - field_name: "clip"
+      datatype: "FLOAT_VECTOR"
+      dim: 512
+    - field_name: "ocr"
+      datatype: "JSON"
+
+# Web UI and Search Configuration  
+webui:
+  features: *analyse_features
+  database: "faiss"  # Changed from "milvus" to "faiss"
+  
+  # Enhanced caching system
+  cache:
+    enabled: true
+    max_size: 10000  # Maximum cached queries
+    ttl: 3600  # Cache time-to-live in seconds
+  
+  # Search optimization settings
+  search:
+    default_nprobe: 16  # Default search parameter
+    max_results: 10000
+    
+    # Result reranking for better precision
+    rerank:
+      enabled: false  # Set to true for better accuracy
+      top_k: 100
+      model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+# Hardware Optimization
+hardware:
+  # GPU settings
+  gpu:
+    enabled: true
+    mixed_precision: true
+    compile_model: false  # PyTorch 2.0 compilation (experimental)
+    
+  # CPU settings  
+  cpu:
+    num_threads: -1  # Use all available cores
+    
+  # Memory optimization
+  memory:
+    prefetch_factor: 4
+    persistent_workers: true
+
+# Advanced Features
+advanced:
+  # Query expansion with synonyms
+  query_expansion:
+    enabled: false  # Set to true to enable
+    synonyms_file: "synonyms.txt"
+    expand_ratio: 0.3
+  
+  # Pseudo relevance feedback
+  prf:
+    enabled: false  # Set to true to enable
+    top_k: 5
+    expansion_terms: 10
+    weight: 0.3
+  
+  # Multi-modal feature fusion
+  fusion:
+    enabled: true
+    weights:
+      clip: 0.7
+      ocr: 0.2
+      temporal: 0.1
+  
+  # Temporal consistency for video sequences
+  temporal:
+    enabled: true
+    window_size: 25  # Frames
+    consistency_weight: 0.15
+
+# Monitoring and Logging
+monitoring:
+  enabled: true
+  metrics:
+    - "search_latency"
+    - "index_size"
+    - "recall_at_k"
+    - "precision_at_k"
+  
+  logging:
+    level: "INFO"
+    file: "retrieval.log"
+
+# Legacy Milvus configuration (kept for reference/migration)
+# Remove this section after successful migration
+milvus_legacy:
+  fields:
+    - field_name: "frame_id"
+      datatype: "VARCHAR" 
       max_length: 32
       is_primary: true
     - field_name: "clip"
@@ -30,6 +185,27 @@ milvus:
       params:
         nlist: 128
 
-webui:
-  features: *analyse_features
-  database: "milvus"
+# Performance Tuning Guidelines:
+# 
+# For Small Datasets (< 10k vectors):
+# faiss:
+#   index_type: "Flat"
+#
+# For Medium Datasets (10k - 1M vectors):  
+# faiss:
+#   index_type: "IVF"
+#   nlist: 128-1024
+#   nprobe: 8-32
+#
+# For Large Datasets (> 1M vectors):
+# faiss:
+#   index_type: "HNSW" 
+#   M: 16-64
+#   efConstruction: 200-800
+#   efSearch: 100-500
+#
+# For Memory-Constrained Environments:
+# faiss:
+#   index_type: "PQ"
+#   m: 8-16
+#   nbits: 8

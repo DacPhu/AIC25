@@ -1,9 +1,9 @@
 import logging
-from typing import Any
 from abc import ABC, abstractmethod
+from typing import Any
 
-from torch.utils.data import Dataset, DataLoader
 from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 
 
 class ImageDataset(Dataset):
@@ -20,9 +20,7 @@ class ImageDataset(Dataset):
         image = Image.open(path)
 
         processed_data = self._processor(images=[image], return_tensors="pt")
-        processed_data["pixel_values"] = processed_data["pixel_values"].squeeze(
-            0
-        )
+        processed_data["pixel_values"] = processed_data["pixel_values"].squeeze(0)
 
         return processed_data
 

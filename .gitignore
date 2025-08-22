@@ -357,3 +357,30 @@ pyrightconfig.json
 *.webm
 
 # End of https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,data,images,video,audio,node
+
+# AIC25 specific
+workspace/
+dev_workspace/
+aic25_workspace/
+cache/
+*.faiss
+*.pkl
+keyframes/
+features/
+indices/
+videos_info/
+default_collection/
+faiss_db/
+
+# Model files
+*.bin
+*.safetensors
+models/
+
+# Build artifacts
+web/dist/
+web/build/
+
+# OS specific
+.DS_Store
+Thumbs.db

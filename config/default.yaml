@@ -1,0 +1,78 @@
+# AIC25 Default Configuration
+# This file contains the default settings for the AIC25 multimedia retrieval system
+
+# Web UI Configuration
+webui:
+  database: "faiss"  # Database type: "faiss" or "milvus"
+  host: "127.0.0.1"
+  port: 8000
+  
+  # Feature extraction models
+  features:
+    - name: "clip"
+      pretrained_model: "openai/clip-vit-base-patch16"
+      batch_size: 16
+      device: "auto"  # "cpu", "cuda", or "auto"
+      description: "CLIP model for image-text similarity"
+      
+    - name: "sentence_transformer"
+      pretrained_model: "all-MiniLM-L6-v2"
+      device: "auto"
+      batch_size: 32
+      description: "Semantic text search with sentence transformers"
+      
+    - name: "ocr"
+      enabled: true
+      languages: ["en", "vi"]
+      description: "Optical Character Recognition"
+
+  # Search configuration
+  search:
+    default_nprobe: 16
+    max_results: 10000
+    temporal_k: 10000
+    ocr_weight: 1.0
+    ocr_threshold: 40
+    max_interval: 250
+    
+    # Re-ranking settings
+    rerank:
+      enabled: false
+      top_k: 100
+      
+# Hardware optimization
+hardware:
+  gpu:
+    enabled: true
+    mixed_precision: true
+  cpu:
+    num_threads: -1  # -1 for all available cores
+
+# Distributed system settings
+distributed:
+  service_discovery:
+    enabled: true
+    port: 8080
+    registry_host: "localhost"
+  
+  load_balancing:
+    strategy: "health_weighted"  # "round_robin", "health_weighted", "random", "least_connections"
+    health_check_interval: 30  # seconds
+    
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: null  # Set to file path to enable file logging
+
+# Storage configuration
+storage:
+  workspace_dir: "./workspace"
+  cache_dir: "./cache"
+  
+  # File paths (relative to workspace_dir)
+  videos_dir: "videos"
+  keyframes_dir: "keyframes"
+  features_dir: "features"
+  indices_dir: "indices"
+  videos_info_dir: "videos_info"

@@ -1,0 +1,106 @@
+max_workers_ratio: 0.8
+add:
+  max_scene_length: 50
+  keyframe_extraction:
+    method: adaptive
+    adaptive_threshold: 0.3
+    max_frames_per_second: 2
+    min_frames_per_video: 10
+    max_frames_per_video: 1000
+analyse:
+  features:
+  - name: clip
+    pretrained_model: openai/clip-vit-base-patch16
+    batch_size: 16
+    use_ensemble: false
+  - name: ocr
+    batch_size: 8
+    confidence_threshold: 0.7
+    languages:
+    - vi
+    - en
+  num_workers: 2
+  pin_memory: true
+  mixed_precision: true
+  keyframe_extraction:
+    method: adaptive
+    adaptive_threshold: 0.3
+    max_frames_per_second: 2
+    min_frames_per_video: 10
+    max_frames_per_video: 1000
+faiss:
+  index_type: IVF
+  nlist: 128
+  nprobe: 8
+  M: 32
+  efConstruction: 400
+  efSearch: 200
+  m: 8
+  nbits: 8
+  fields:
+  - field_name: frame_id
+    datatype: VARCHAR
+    max_length: 32
+    is_primary: true
+  - field_name: clip
+    datatype: FLOAT_VECTOR
+    dim: 512
+  - field_name: ocr
+    datatype: JSON
+webui:
+  features:
+  - name: clip
+    pretrained_model: openai/clip-vit-base-patch16
+    batch_size: 16
+  database: faiss
+  cache:
+    enabled: true
+    max_size: 10000
+    ttl: 3600
+  search:
+    default_nprobe: 16
+    max_results: 10000
+    rerank:
+      enabled: false
+      top_k: 100
+      model: cross-encoder/ms-marco-MiniLM-L-6-v2
+hardware:
+  gpu:
+    enabled: true
+    mixed_precision: true
+    compile_model: false
+  cpu:
+    num_threads: -1
+  memory:
+    prefetch_factor: 4
+    persistent_workers: true
+advanced:
+  query_expansion:
+    enabled: false
+    synonyms_file: synonyms.txt
+    expand_ratio: 0.3
+  prf:
+    enabled: false
+    top_k: 5
+    expansion_terms: 10
+    weight: 0.3
+  fusion:
+    enabled: true
+    weights:
+      clip: 0.7
+      ocr: 0.2
+      temporal: 0.1
+  temporal:
+    enabled: true
+    window_size: 25
+    consistency_weight: 0.15
+monitoring:
+  enabled: true
+  metrics:
+  - search_latency
+  - index_size
+  - recall_at_k
+  - precision_at_k
+  logging:
+    level: INFO
+    file: retrieval.log

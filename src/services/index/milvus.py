@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 from pymilvus import DataType, MilvusClient
+
 from config import GlobalConfig
 
 

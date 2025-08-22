@@ -1,0 +1,287 @@
+# Distributed AIC25 Configuration
+# Configuration for multi-device deployment with service discovery
+
+# Service Discovery Configuration
+discovery:
+  # Service registry endpoints (comma-separated)
+  # These are other devices running AIC25 that can act as service registries
+  registry_endpoints:
+    - "http://192.168.1.100:5000"
+    - "http://192.168.1.101:5000"
+    - "http://10.0.0.100:5000"
+  
+  # Multicast settings for local network discovery
+  multicast:
+    enabled: true
+    group: "224.1.1.1"
+    port: 5353
+    announce_interval: 30  # seconds
+  
+  # Health check settings
+  health_check:
+    interval: 30  # seconds
+    timeout: 10   # seconds
+    max_failures: 3
+  
+  # Load balancing strategy
+  load_balancing:
+    strategy: "health_weighted"  # round_robin, random, response_time, health_weighted
+    max_backends: 10
+    failover_retries: 3
+
+# Network Configuration
+network:
+  # Default ports to scan for service discovery
+  scan_ports:
+    - 5000
+    - 5001
+    - 5002
+    - 5003
+    - 5004
+    - 5005
+  
+  # Network interfaces to bind to
+  # Use "0.0.0.0" to bind to all interfaces
+  bind_host: "0.0.0.0"
+  
+  # Default port for this instance
+  port: 5000
+  
+  # Timeout settings
+  timeouts:
+    discovery: 5000    # ms
+    request: 30000     # ms
+    heartbeat: 5000    # ms
+
+# Backend Instance Configuration
+backend:
+  # Unique identifier for this backend instance
+  # Leave empty to auto-generate
+  instance_id: ""
+  
+  # Device name (defaults to hostname)
+  device_name: ""
+  
+  # Capabilities this backend provides
+  capabilities:
+    - "search"
+    - "frames" 
+    - "videos"
+    - "system"
+    - "audio"
+    - "similar"
+  
+  # Performance weights for load balancing
+  # Higher values indicate more powerful hardware
+  weights:
+    cpu_weight: 1.0
+    memory_weight: 1.0
+    gpu_weight: 1.0
+  
+  # Resource limits
+  limits:
+    max_concurrent_requests: 100
+    max_search_results: 1000
+    max_batch_queries: 20
+
+# Frontend Configuration
+frontend:
+  # Discovery settings
+  discovery_interval: 30000  # ms
+  health_check_interval: 10000  # ms
+  
+  # Failover settings
+  max_retries: 3
+  retry_delay: 1000  # ms
+  
+  # Auto-discovery settings
+  auto_discovery:
+    enabled: true
+    local_network_scan: true
+    registry_sync: true
+    
+  # Preferred backend selection
+  preferences:
+    prefer_local: true      # Prefer backends on same device/network
+    prefer_faster: true     # Prefer backends with lower response time
+    stick_to_backend: false # Try to use same backend for session
+
+# Device Profiles
+# Configure different profiles for different types of devices
+device_profiles:
+  # High-performance server
+  server:
+    backend:
+      weights:
+        cpu_weight: 2.0
+        memory_weight: 2.0
+        gpu_weight: 3.0
+      limits:
+        max_concurrent_requests: 200
+        max_search_results: 2000
+  
+  # Desktop/laptop
+  desktop:
+    backend:
+      weights:
+        cpu_weight: 1.0
+        memory_weight: 1.0
+        gpu_weight: 1.5
+      limits:
+        max_concurrent_requests: 50
+        max_search_results: 1000
+  
+  # Lightweight/edge device  
+  edge:
+    backend:
+      weights:
+        cpu_weight: 0.5
+        memory_weight: 0.5
+        gpu_weight: 0.3
+      limits:
+        max_concurrent_requests: 20
+        max_search_results: 500
+
+# Security Configuration
+security:
+  # Authentication settings
+  auth:
+    enabled: false
+    api_key_header: "X-API-Key"
+    api_keys: []
+  
+  # Network security
+  network:
+    # Allowed IP ranges for service discovery
+    allowed_networks:
+      - "192.168.0.0/16"
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "127.0.0.0/8"
+    
+    # Block specific IPs
+    blocked_ips: []
+  
+  # Rate limiting
+  rate_limiting:
+    enabled: false
+    requests_per_minute: 100
+    burst_size: 20
+
+# Monitoring and Logging
+monitoring:
+  # Enable metrics collection
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    include_system_metrics: true
+  
+  # Logging configuration
+  logging:
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file: "aic25_distributed.log"
+    max_file_size: "10MB"
+    backup_count: 5
+  
+  # Health monitoring
+  health:
+    enabled: true
+    endpoint: "/health"
+    detailed: true
+
+# High Availability
+high_availability:
+  # Automatic failover
+  failover:
+    enabled: true
+    detection_timeout: 30  # seconds
+    switch_timeout: 5      # seconds
+  
+  # Data replication (for future use)
+  replication:
+    enabled: false
+    replication_factor: 2
+    sync_interval: 300  # seconds
+
+# Environment-specific settings
+environments:
+  development:
+    network:
+      port: 5000
+    monitoring:
+      logging:
+        level: "DEBUG"
+    
+  production:
+    network:
+      port: 80
+    security:
+      auth:
+        enabled: true
+    monitoring:
+      logging:
+        level: "INFO"
+
+# Deployment Examples
+deployment_examples:
+  # Single device development
+  single_device:
+    description: "Single device for development and testing"
+    instances:
+      - device: "localhost"
+        port: 5000
+        profile: "desktop"
+  
+  # Small office deployment
+  small_office:
+    description: "3-device setup for small office"
+    instances:
+      - device: "server.local"
+        port: 5000
+        profile: "server"
+      - device: "workstation1.local" 
+        port: 5001
+        profile: "desktop"
+      - device: "workstation2.local"
+        port: 5002
+        profile: "desktop"
+  
+  # Enterprise deployment
+  enterprise:
+    description: "Large-scale enterprise deployment"
+    instances:
+      - device: "aic25-server-01"
+        port: 80
+        profile: "server"
+      - device: "aic25-server-02"
+        port: 80
+        profile: "server"
+      - device: "aic25-server-03"
+        port: 80
+        profile: "server"
+      - device: "edge-device-*"
+        port: 8080
+        profile: "edge"
+
+# Usage Instructions
+usage_instructions: |
+  To deploy AIC25 in a distributed setup:
+  
+  1. Configure this file for your environment
+  2. Set environment variables:
+     - AIC25_HOST: Host to bind to (default: 0.0.0.0)
+     - AIC25_PORT: Port to bind to (default: 5000)
+     - AIC25_REGISTRY_ENDPOINTS: Comma-separated list of other AIC25 instances
+     - AIC25_DEVICE_PROFILE: Device profile to use (server/desktop/edge)
+  
+  3. Start the backend service:
+     python -m src.entry.web.startup
+  
+  4. Start additional instances on other devices with different ports
+  
+  5. The frontend will automatically discover and load-balance across all instances
+  
+  6. Use the registry API to monitor and manage the cluster:
+     GET /api/v1/registry/services - List all services
+     GET /api/v1/registry/health - Cluster health status

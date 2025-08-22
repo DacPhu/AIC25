@@ -1,14 +1,16 @@
-import subprocess
-import os
 import json
+import os
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import numpy as np
 from rich.progress import Progress, TextColumn, TimeElapsedColumn
 
-from .command import BaseCommand
-from services.index import MilvusDatabase
 from config import GlobalConfig
+from services.index import DatabaseFactory
+
+from .command import BaseCommand
 
 
 class IndexCommand(BaseCommand):
@@ -23,8 +25,16 @@ class IndexCommand(BaseCommand):
             "--collection",
             dest="collection_name",
             type=str,
-            default="milvus",
+            default="default_collection",
             help="Name of collection to index",
+        )
+        parser.add_argument(
+            "-d",
+            "--database",
+            dest="database_type",
+            type=str,
+            choices=["faiss", "milvus"],
+            help="Database type to use (faiss or milvus). Defaults to config setting",
         )
         parser.add_argument(
             "-o",
@@ -44,13 +54,31 @@ class IndexCommand(BaseCommand):
         parser.set_defaults(func=self)
 
     def __call__(
-        self, collection_name, do_overwrite, do_update, verbose, *args, **kwargs
+        self,
+        collection_name: str,
+        database_type: str = None,
+        do_overwrite: bool = False,
+        do_update: bool = False,
+        verbose: bool = True,
+        *args: Any,
+        **kwargs: Any,
     ):
-        MilvusDatabase.start_server()
-        database = MilvusDatabase(collection_name, do_overwrite)
+        database = DatabaseFactory.create_database(
+            database_type=database_type,
+            collection_name=collection_name,
+            do_overwrite=do_overwrite,
+            work_dir=str(self._work_dir),
+        )
+
+        db_type_name = database_type or GlobalConfig.get("webui", "database") or "faiss"
+        self._logger.info(
+            f"Indexing features into {db_type_name} collection '{collection_name}'..."
+        )
+
         features_dir = self._work_dir / "features"
         keyframes_dir = self._work_dir / "keyframes"
         max_workers_ratio = GlobalConfig.get("max_workers_ratio") or 0
+
         with (
             Progress(
                 TextColumn("{task.fields[name]}"),
@@ -65,14 +93,10 @@ class IndexCommand(BaseCommand):
         ):
 
             def update_progress(task_id):
-                return lambda *args, **kwargs: progress.update(
-                    task_id, *args, **kwargs
-                )
+                return lambda *args, **kwargs: progress.update(task_id, *args, **kwargs)
 
             def index_one_video(video_id):
-                task_id = progress.add_task(
-                    description="Processing...", name=video_id
-                )
+                task_id = progress.add_task(description="Processing...", name=video_id)
                 try:
                     self._index_features(
                         database,
@@ -105,6 +129,7 @@ class IndexCommand(BaseCommand):
         video_path = self._work_dir / "videos" / f"{video_id}.mp4"
         video_info_path = self._work_dir / "videos_info" / f"{video_id}.json"
         video_info_path.parent.mkdir(exist_ok=True, parents=True)
+
         ffprobe_cmd = ["ffprobe", "-v", "quiet", "-of", "compact=p=0"] + [
             "-select_streams",
             "0",
@@ -114,8 +139,16 @@ class IndexCommand(BaseCommand):
         ]
         res = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
 
-        fraction = str(res.stdout).split("=")[1].split("/")
-        frame_rate = round(int(fraction[0]) / int(fraction[1]))
+        if res.returncode != 0:
+            self._logger.error(f"ffprobe failed for {video_id}: {res.stderr}")
+            frame_rate = 30
+        else:
+            try:
+                fraction = str(res.stdout).split("=")[1].split("/")
+                frame_rate = round(int(fraction[0]) / int(fraction[1]))
+            except (IndexError, ValueError) as e:
+                self._logger.warning(f"Failed to parse frame rate for {video_id}: {e}")
+                frame_rate = 30
 
         with open(video_info_path, "w") as f:
             json.dump(dict(frame_rate=frame_rate), f)
@@ -125,31 +158,32 @@ class IndexCommand(BaseCommand):
         self._extract_video_info(video_id)
         features_dir = self._work_dir / "features" / video_id
         data_list = []
+
         for frame_path in features_dir.glob("*/"):
             if not frame_path.is_dir():
                 continue
             frame_id = frame_path.stem
             data = {
-                "frame_id": f"{video_id}#{frame_id}",  # This is because Milvus does not allow composite primary key
+                "frame_id": f"{video_id}#{frame_id}",
             }
+
             for feature_path in frame_path.glob("*"):
                 if feature_path.is_dir():
                     continue
                 if feature_path.suffix == ".npy":
                     feature = np.load(feature_path)
+                    data[feature_path.stem] = feature.tolist()
                 elif feature_path.suffix == ".txt":
                     with open(feature_path, "r") as f:
                         feature = f.read()
                         feature = feature.lower()
+                    data[feature_path.stem] = feature
                 elif feature_path.suffix == ".json":
                     with open(feature_path, "r") as f:
                         feature = json.load(f)
+                    data[feature_path.stem] = feature
                 else:
                     continue
-                data = {
-                    **data,
-                    f"{feature_path.stem}": feature,
-                }
             data_list.append(data)
 
         database.insert(data_list, do_update)

@@ -1,9 +1,11 @@
-import os
 import logging
+import os
 from argparse import ArgumentParser
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from config import GlobalConfig
 
 load_dotenv()
 
@@ -11,7 +13,7 @@ from rich.logging import RichHandler
 from rich.traceback import install
 
 dev_mode = os.getenv("AIC25_DEV", "false").lower() == "true"
-# Setup loggers
+
 FORMAT = "%(message)s"
 DATE_FORMAT = "[%X]"
 logging.basicConfig(
@@ -24,37 +26,57 @@ logger = logging.getLogger(__name__)
 
 install(show_locals=dev_mode)
 
-from . import commands
+from entry.cli import commands
 
 
 def main():
-
-    work_dir = Path.cwd()
-
-    parser = ArgumentParser(description="Command Line Interface of AIC51.")
+    work_dir = Path.cwd() / "aic25_workspace"
+    GlobalConfig.initialize(work_dir)
+    parser = ArgumentParser(
+        description="Command Line Interface of Team Past Beggar of AIC25."
+    )
     parser.add_argument(
         "-q",
         "--quiet",
         dest="verbose",
         action="store_false",
     )
-    subparser = parser.add_subparsers(help="command", dest="command")
+    parser.add_argument(
+        "-w",
+        "--workspace-dir",
+        dest="work_dir",
+        type=Path,
+        default=work_dir,
+        help="Path to workspace",
+    )
+    subparser = parser.add_subparsers(help="command", dest="command", required=True)
 
     for command_cls in commands.available_commands:
         command = command_cls(work_dir)
-
         command.add_args(subparser)
 
     args = parser.parse_args()
+    args_dict = vars(args)
+    command = args_dict.pop("command")
 
-    args = vars(args)
-    command = args.pop("command")
+    actual_work_dir = args_dict.get("work_dir", work_dir)
 
-    func = args.pop("func")
-    if not args.get("verbose"):
+    if "func" not in args_dict:
+        parser.print_help()
+        return
+
+    logger.info(f"Start running command: {command}")
+    logger.debug(f"Working directory: {actual_work_dir}")
+
+    func = args_dict.pop("func")
+
+    if not args_dict.get("verbose"):
         logging.disable(logging.CRITICAL)
 
-    func(**args)
+    if "work_dir" in args_dict:
+        args_dict["work_dir"] = actual_work_dir
+
+    func(**args_dict)
 
 
 if __name__ == "__main__":

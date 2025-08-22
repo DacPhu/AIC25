@@ -1,8 +1,9 @@
-from transformers import CLIPModel, CLIPProcessor
-from torch.utils.data import DataLoader
 import torch
+from torch.utils.data import DataLoader
+from transformers import CLIPModel, CLIPProcessor
 
 from config import GlobalConfig
+
 from .feature_extractor import FeatureExtractor, ImageDataset
 
 
@@ -22,9 +23,7 @@ class CLIP(FeatureExtractor):
             shuffle=False,
             drop_last=False,
             num_workers=GlobalConfig.get("analyse", "num_workers") or 0,
-            pin_memory=(
-                True if GlobalConfig.get("analyse", "pin_memory") else False
-            ),
+            pin_memory=(True if GlobalConfig.get("analyse", "pin_memory") else False),
         )
         image_features = None
         num_batches = len(dataloader)

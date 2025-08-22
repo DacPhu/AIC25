@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 
 
 class BaseCommand(ABC):
@@ -14,5 +14,5 @@ class BaseCommand(ABC):
         pass
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         pass

@@ -1,23 +1,17 @@
 import os
-import time
-import subprocess
 import shutil
 import sys
-import logging
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Any, Callable, Union
 
-import json
-from rich.progress import (
-    TextColumn,
-    Progress,
-    SpinnerColumn,
-    TimeElapsedColumn,
-)
 import cv2
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
+from config import GlobalConfig
+from utils import get_keyframes_list
 
 from .command import BaseCommand
-from config import GlobalConfig
 
 
 class AddCommand(BaseCommand):
@@ -29,9 +23,7 @@ class AddCommand(BaseCommand):
         super(AddCommand, self).__init__(*args, **kwargs)
 
     def add_args(self, subparser):
-        parser = subparser.add_parser(
-            "add", help="Add video(s) to the work directory"
-        )
+        parser = subparser.add_parser("add", help="Add video(s) to the work directory")
         parser.add_argument(
             "video_path",
             type=str,
@@ -63,11 +55,11 @@ class AddCommand(BaseCommand):
 
     def __call__(
         self,
-        video_path,
-        do_multi,
-        do_move,
-        do_overwrite,
-        verbose,
+        video_path: Union[str, Path],
+        do_multi: bool,
+        do_move: bool,
+        do_overwrite: bool,
+        verbose: bool,
         *args,
         **kwargs,
     ):
@@ -90,7 +82,13 @@ class AddCommand(BaseCommand):
         video_paths = sorted(video_paths, key=lambda path: path.stem)
         self._add_videos(video_paths, do_move, do_overwrite, verbose)
 
-    def _add_videos(self, video_paths, do_move, do_overwrite, verbose):
+    def _add_videos(
+        self,
+        video_paths: Union[list[Path], list[str]],
+        do_move: bool,
+        do_overwrite: bool,
+        verbose: bool,
+    ) -> None:
         max_workers_ratio = GlobalConfig.get("max_workers_ratio") or 0
         with (
             Progress(
@@ -106,10 +104,10 @@ class AddCommand(BaseCommand):
             ) as executor,
         ):
 
-            def show_progress(task_id):
+            def show_progress(task_id: Any):
                 return lambda **kwargs: progress.update(task_id, **kwargs)
 
-            def add_one_video(video_path):
+            def add_one_video(video_path: Union[str, Path]):
                 task_id = progress.add_task(
                     total=2,
                     description=f"Processing...",
@@ -135,9 +133,7 @@ class AddCommand(BaseCommand):
                         completed=1,
                         total=1,
                         description=(
-                            f"Added with ID {video_id}"
-                            if video_id
-                            else f"Skipped"
+                            f"Added with ID {video_id}" if video_id else f"Skipped"
                         ),
                     )
                     progress.remove_task(task_id)
@@ -150,12 +146,16 @@ class AddCommand(BaseCommand):
             for path in video_paths:
                 executor.submit(add_one_video, path)
 
-    def _load_video(self, video_path, do_move, do_overwrite, update_progress):
+    def _load_video(
+        self,
+        video_path: Union[str, Path],
+        do_move: bool,
+        do_overwrite: bool,
+        update_progress: Callable,
+    ) -> tuple[Path, Union[str, None]]:
         update_progress(description=f"Loading...")
         video_id = video_path.stem
-        output_path = (
-            self._work_dir / "videos" / f"{video_id}{video_path.suffix}"
-        )
+        output_path = self._work_dir / "videos" / f"{video_id}{video_path.suffix}"
 
         if output_path.exists() and not do_overwrite:
             return output_path, None
@@ -168,7 +168,9 @@ class AddCommand(BaseCommand):
 
         return output_path, video_id
 
-    def _extract_keyframes(self, video_path, update_progress):
+    def _extract_keyframes(
+        self, video_path: Union[str, Path], update_progress: Callable
+    ):
         update_progress(description=f"Extracting keyframes...")
 
         keyframe_dir = self._work_dir / "keyframes" / f"{video_path.stem}"
@@ -176,7 +178,7 @@ class AddCommand(BaseCommand):
             shutil.rmtree(keyframe_dir)
 
         keyframe_dir.mkdir(parents=True, exist_ok=True)
-        keyframes_list = self._get_keyframes_list(video_path)
+        keyframes_list = get_keyframes_list(video_path)
         max_scene_length = GlobalConfig.get("add", "max_scene_length") or 25
 
         update_progress(description=f"Saving keyframes...")
@@ -188,12 +190,9 @@ class AddCommand(BaseCommand):
             ret, frame = cap.read()
             if not ret:
                 break
-            if (
-                scene_length >= max_scene_length
-                or frame_counter in keyframes_list
-            ):
+            if scene_length >= max_scene_length or frame_counter in keyframes_list:
                 cv2.imwrite(
-                    keyframe_dir / f"{frame_counter:06d}.jpg",
+                    str(keyframe_dir / f"{frame_counter:06d}.jpg"),
                     frame,
                     [cv2.IMWRITE_JPEG_QUALITY, 50],
                 )
@@ -201,23 +200,3 @@ class AddCommand(BaseCommand):
             scene_length += 1
             frame_counter += 1
         cap.release()
-
-    def _get_keyframes_list(self, video_path):
-        ffprobe_cmd = (
-            ["ffprobe", "-v", "quiet"]
-            + [
-                "-select_streams",
-                "v",
-                "-show_frames",
-                "-show_entries",
-                "frame=pict_type",
-            ]
-            + ["-of", "csv", str(video_path)]
-        )
-        res = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
-        keyframes_list = res.stdout.strip().split("\n")
-        keyframes_list = [x for x in keyframes_list if x.startswith("frame")]
-        keyframes_list = [
-            i for i, x in enumerate(keyframes_list) if x.startswith("frame,I")
-        ]
-        return keyframes_list

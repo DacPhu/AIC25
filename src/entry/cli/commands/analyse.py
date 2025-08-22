@@ -1,14 +1,15 @@
-import os
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import torch
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
+from config import GlobalConfig
+from services.analyse.features import CLIP, AudioExtractor, TrOCR
 
 from .command import BaseCommand
-from services.analyse.features import CLIP, TrOCR
-from config import GlobalConfig
 
 
 class AnalyseCommand(BaseCommand):
@@ -16,9 +17,7 @@ class AnalyseCommand(BaseCommand):
         super(AnalyseCommand, self).__init__(*args, **kwargs)
 
     def add_args(self, subparser):
-        parser = subparser.add_parser(
-            "analyse", help="Analyse extracted keyframes"
-        )
+        parser = subparser.add_parser("analyse", help="Analyse extracted keyframes")
 
         parser.add_argument(
             "--no-gpu",
@@ -59,6 +58,14 @@ class AnalyseCommand(BaseCommand):
                 self._logger.info(
                     f"Start extracting features using {model_name} (easyOCR)"
                 )
+            elif model_name == "audio":
+                pretrained_model = model_info.get(
+                    "pretrained_model", "facebook/wav2vec2-base-960h"
+                )
+                model = AudioExtractor(pretrained_model)
+                self._logger.info(
+                    f"Start extracting features using {model_name} ({pretrained_model})"
+                )
             else:
                 self._logger.error(f"{model_name}: model is not available")
                 continue
@@ -75,9 +82,7 @@ class AnalyseCommand(BaseCommand):
                     max_workers = 1
 
                 model.to("cpu")
-                self._logger.warning(
-                    "CUDA is not available, fallbacked to use CPU"
-                )
+                self._logger.warning("CUDA is not available, fallback to use CPU")
 
             with (
                 Progress(
@@ -114,9 +119,7 @@ class AnalyseCommand(BaseCommand):
                             task_id,
                             completed=1,
                             total=1,
-                            description=(
-                                "Finished" if status_ok else "Skipped"
-                            ),
+                            description=("Finished" if status_ok else "Skipped"),
                         )
                         progress.remove_task(task_id)
                     except Exception as e:
@@ -130,9 +133,7 @@ class AnalyseCommand(BaseCommand):
 
     def _get_video_ids(self):
         keyframes_dir = self._work_dir / "keyframes"
-        video_ids = sorted(
-            [d.stem for d in keyframes_dir.glob("*") if d.is_dir()]
-        )
+        video_ids = sorted([d.stem for d in keyframes_dir.glob("*") if d.is_dir()])
         return video_ids
 
     def _get_keyframes_list(self, model_name, video_id, do_overwrite):
@@ -170,12 +171,10 @@ class AnalyseCommand(BaseCommand):
         video_id,
         batch_size,
         do_overwrite,
-        update_progress,
+        update_progress
     ):
         update_progress(description="Extracting features...")
-        keyframe_files = self._get_keyframes_list(
-            model_name, video_id, do_overwrite
-        )
+        keyframe_files = self._get_keyframes_list(model_name, video_id, do_overwrite)
         if len(keyframe_files) == 0:
             return 1
         features_dir = self._work_dir / f"features" / video_id

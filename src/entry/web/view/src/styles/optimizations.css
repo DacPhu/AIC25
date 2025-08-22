@@ -1,0 +1,177 @@
+/* Performance optimizations and responsive improvements */
+
+/* GPU acceleration for animations */
+.animate-spin,
+.animate-pulse {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Optimized image loading */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Lazy loading placeholders */
+.loading-placeholder {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive grid optimizations */
+@media (max-width: 640px) {
+  /* Mobile optimizations */
+  .frame-container {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+  }
+  
+  .frame-item {
+    min-width: 150px;
+  }
+  
+  /* Reduce motion for better performance on mobile */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-spin,
+    .animate-pulse,
+    .transition-colors,
+    .transition-opacity {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet optimizations */
+  .frame-container {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  
+  .frame-item {
+    min-width: 200px;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop optimizations */
+  .frame-container {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  
+  .frame-item {
+    min-width: 240px;
+  }
+}
+
+/* Scroll optimizations */
+.scroll-container {
+  overflow-y: auto;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Optimize scrolling performance */
+  overscroll-behavior-y: contain;
+}
+
+/* Virtual grid optimizations */
+.virtual-grid {
+  contain: layout style paint;
+}
+
+.virtual-grid-item {
+  contain: layout style paint;
+  will-change: transform;
+}
+
+/* Button hover optimizations */
+@media (hover: hover) {
+  .hover\\:bg-gray-200:hover,
+  .hover\\:bg-gray-300:hover,
+  .hover\\:bg-gray-500:hover {
+    transform: translateZ(0); /* GPU acceleration */
+  }
+}
+
+/* Focus optimizations */
+.focus\\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* Print optimizations */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .frame-item {
+    break-inside: avoid;
+  }
+}
+
+/* Force light mode */
+:root {
+  color-scheme: light;
+}
+
+/* Override dark mode preferences - force white background */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .frame-item {
+    border: 2px solid;
+  }
+  
+  .selected {
+    border-color: #ffffff;
+    background-color: #000000;
+  }
+}
+
+/* Reduced data mode */
+@media (prefers-reduced-data: reduce) {
+  /* Disable background images and videos in data-saving mode */
+  .background-image {
+    background-image: none !important;
+  }
+  
+  video {
+    display: none;
+  }
+}
+
+/* Container queries for adaptive layouts */
+@container (max-width: 400px) {
+  .frame-item {
+    min-width: 120px;
+  }
+}
+
+@container (min-width: 800px) {
+  .frame-item {
+    min-width: 280px;
+  }
+}
